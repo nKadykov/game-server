@@ -50,7 +50,7 @@ sf::Socket::Status NetworkServer::receiveClientData() {
 		return sf::Socket::Status::NotReady;
 	}
 	if (m_packet.getDataSize() < 1) {
-		std::cout << "(!)receiveClientRegData(): Error, received packet is empty\n";
+		std::cout << "receiveClientData(): Error, received packet is empty\n";
 		return sf::Socket::Status::Error;
 	}
 	std::string name;
@@ -87,8 +87,7 @@ sf::Socket::Status NetworkServer::receiveClientData() {
 	return sf::Socket::Status::Done;
 }
 
-sf::Socket::Status NetworkServer::sendClientData()
-{
+sf::Socket::Status NetworkServer::sendClientData() {
 	if (m_registration_step != 2) {
 		return sf::Socket::Status::Error;
 	}
@@ -104,24 +103,19 @@ sf::Socket::Status NetworkServer::sendClientData()
 			sf::IpAddress temp_ip = m_client_vector[i].ip;
 			unsigned short temp_port = m_client_vector[i].port;
 
-			if (m_client_vector[i].send_packet.getDataSize() == 0)
+			if (m_client_vector[i].send_packet.getDataSize() == 0) {
 				m_client_vector[i].send_packet << "NEW" << m_client_vector.back().name;
-
-			if (m_client_vector[i].p_data_socket->send(m_client_vector[i].send_packet, temp_ip, temp_port) == sf::Socket::Status::Done)
-			{
+			}
+			if (m_client_vector[i].p_data_socket->send(m_client_vector[i].send_packet, temp_ip, temp_port) == sf::Socket::Status::Done) {
 				m_client_vector[i].done = true;
-
 				bool all_done = true;
-				for (int k = 0; k < m_client_vector.size() - 1; k++)
-				{
+				for (int k = 0; k < m_client_vector.size() - 1; k++) {
 					if (!m_client_vector[k].done) {
 						all_done = false;
 					}
 				}
-				if (all_done)
-				{
-					for (int j = 0; j < m_client_vector.size(); j++)
-					{
+				if (all_done) {
+					for (int j = 0; j < m_client_vector.size(); j++) {
 						m_client_vector[j].send_packet.clear();
 						m_client_vector[j].done = false;
 					}
@@ -134,8 +128,7 @@ sf::Socket::Status NetworkServer::sendClientData()
 	return sf::Socket::Status::NotReady;
 }
 
-sf::Socket::Status NetworkServer::sendDataPort()
-{
+sf::Socket::Status NetworkServer::sendDataPort() {
 	if (m_registration_step != 3) {
 		return sf::Socket::Status::Error;
 	}
@@ -149,14 +142,13 @@ sf::Socket::Status NetworkServer::sendDataPort()
 	if (m_registration_socket.send(m_packet) != sf::Socket::Status::Done) {
 		return sf::Socket::Status::NotReady;
 	}
-	std::cout << "sendDedicatedDataPort(): Dedicated data port sent\n";
+	std::cout << "sendDataPort(): Data port sent\n";
 	m_registration_step = 4;
 	m_packet.clear();
 	return sf::Socket::Status::Done;
 }
 
-sf::Socket::Status NetworkServer::sendClientRecord()
-{
+sf::Socket::Status NetworkServer::sendClientRecord() {
 	if (m_registration_step != 4) {
 		sf::Socket::Status::Error;
 	}
@@ -180,8 +172,7 @@ sf::Socket::Status NetworkServer::sendClientRecord()
 	return sf::Socket::Status::Done;
 }
 
-sf::Socket::Status NetworkServer::receiveData(unsigned int& client_index)
-{
+sf::Socket::Status NetworkServer::receiveData(unsigned int& client_index) {
 	for (int i = 0; i < m_client_vector.size(); i++) {
 		if (m_client_vector[i].p_data_socket->isBlocking()) m_client_vector[i].p_data_socket->setBlocking(false);
 		sf::IpAddress temp_ip = m_client_vector[i].ip;
@@ -193,52 +184,48 @@ sf::Socket::Status NetworkServer::receiveData(unsigned int& client_index)
 			return sf::Socket::Status::Done;
 		}
 	}
-
 	return sf::Socket::Status::NotReady;
 }
 
 sf::Socket::Status NetworkServer::sendData(sf::Packet data_packet)
 {
-	if (m_send_time.getElapsedTime().asMilliseconds() > m_send_rate) {
-		for (int i = 0; i < m_client_vector.size(); i++) {
-			if (!m_client_vector[i].done) {
-				if (m_client_vector[i].p_data_socket->isBlocking()) {
-					m_client_vector[i].p_data_socket->setBlocking(false);
-				}
-				sf::IpAddress temp_ip = m_client_vector[i].ip;
-				unsigned short temp_port = m_client_vector[i].port;
+	if (m_send_time.getElapsedTime().asMilliseconds() <= m_send_rate) {
+		return sf::Socket::Status::NotReady;
+	}
+	for (int i = 0; i < m_client_vector.size(); i++) {
+		if (!m_client_vector[i].done) {
+			if (m_client_vector[i].p_data_socket->isBlocking()) {
+				m_client_vector[i].p_data_socket->setBlocking(false);
+			}
+			sf::IpAddress temp_ip = m_client_vector[i].ip;
+			unsigned short temp_port = m_client_vector[i].port;
 
-				if (m_client_vector[i].send_packet.getDataSize() == 0) {
-					m_client_vector[i].send_packet = data_packet;
-				}
-
-				if (m_client_vector[i].p_data_socket->send(m_client_vector[i].send_packet, temp_ip, temp_port) == sf::Socket::Status::Done) {
-					m_client_vector[i].done = true;
-				}
-
-				bool all_done = true;
-
-				for (int j = 0; j < m_client_vector.size(); j++) {
-					if (m_client_vector[j].done == false) all_done = false;
-				}
-
-				if (all_done) {
-					for (int j = 0; j < m_client_vector.size(); j++) {
-						m_client_vector[j].send_packet.clear();
-						m_client_vector[j].done = false;
-					}
-					m_send_time.restart();
-					return sf::Socket::Status::Done;
-				}
+			if (m_client_vector[i].send_packet.getDataSize() == 0) {
+				m_client_vector[i].send_packet = data_packet;
 			}
 
+			if (m_client_vector[i].p_data_socket->send(m_client_vector[i].send_packet, temp_ip, temp_port) == sf::Socket::Status::Done) {
+				m_client_vector[i].done = true;
+			}
+
+			bool all_done = true;
+
+			for (int j = 0; j < m_client_vector.size(); j++) {
+				if (m_client_vector[j].done == false) all_done = false;
+			}
+
+			if (all_done) {
+				for (int j = 0; j < m_client_vector.size(); j++) {
+					m_client_vector[j].send_packet.clear();
+					m_client_vector[j].done = false;
+				}
+				m_send_time.restart();
+				return sf::Socket::Status::Done;
+			}
 		}
-		return sf::Socket::Status::NotReady;
 
 	}
-	else {
-		return sf::Socket::Status::NotReady;
-	}
+	return sf::Socket::Status::NotReady;
 }
 
 std::vector<Client> NetworkServer::getClientVector() const {
