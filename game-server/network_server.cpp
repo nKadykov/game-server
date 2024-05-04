@@ -146,42 +146,38 @@ sf::Socket::Status NetworkServer::sendDataPort()
 		m_packet << static_cast<sf::Uint16>(m_client_vector.back().p_data_socket->getLocalPort());
 	}
 
-	if (m_registration_socket.send(m_packet) == sf::Socket::Status::Done) {
-		std::cout << "sendDedicatedDataPort(): Dedicated data port sent\n";
-		m_registration_step = 4;
-		m_packet.clear();
-		return sf::Socket::Status::Done;
-	}
-	else {
+	if (m_registration_socket.send(m_packet) != sf::Socket::Status::Done) {
 		return sf::Socket::Status::NotReady;
 	}
+	std::cout << "sendDedicatedDataPort(): Dedicated data port sent\n";
+	m_registration_step = 4;
+	m_packet.clear();
+	return sf::Socket::Status::Done;
 }
 
 sf::Socket::Status NetworkServer::sendClientRecord()
 {
-	if (m_registration_step == 4) {
-		if (m_registration_socket.isBlocking()) {
-			m_registration_socket.setBlocking(false);
-		}
-
-		if (m_packet.getDataSize() == 0) {
-			if (m_client_vector.size() > 1) {
-				for (int i = 0; i < m_client_vector.size() - 1; i++)
-					m_packet << m_client_vector[i].name;
-			}
-			else m_packet << "FIRST";
-		}
-
-		if (m_registration_socket.send(m_packet) == sf::Socket::Status::Done) {
-			std::cout << "sendConnectedClientsRecords(): Connected clients records sent to new client\n";
-			m_registration_step = 5;
-			m_registration_socket.disconnect();
-			return sf::Socket::Status::Done;
-		}
-		else {
-			return sf::Socket::Status::NotReady;
-		}
+	if (m_registration_step != 4) {
+		sf::Socket::Status::Error;
 	}
+	if (m_registration_socket.isBlocking()) {
+		m_registration_socket.setBlocking(false);
+	}
+	if (m_packet.getDataSize() != 0) {
+		m_packet << "FIRST";
+	}
+	if (m_client_vector.size() > 1) {
+		for (int i = 0; i < m_client_vector.size() - 1; i++)
+			m_packet << m_client_vector[i].name;
+	}
+
+	if (m_registration_socket.send(m_packet) != sf::Socket::Status::Done) {
+		return sf::Socket::Status::NotReady;
+	}
+	std::cout << "sendClientRecord(): Connected client records sent to new client\n";
+	m_registration_step = 5;
+	m_registration_socket.disconnect();
+	return sf::Socket::Status::Done;
 }
 
 sf::Socket::Status NetworkServer::receiveData(unsigned int& client_index)
