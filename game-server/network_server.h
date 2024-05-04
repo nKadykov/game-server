@@ -71,8 +71,8 @@ public:
 	sf::Socket::Status sendClientRecord();
 	sf::Socket::Status receiveData(unsigned int&);
 	sf::Socket::Status sendData(sf::Packet);
-
 	std::vector<Client> getClientVector() const;
+	std::vector<Client> m_client_vector;
 private:
 	short m_registration_step = 0;
 	sf::TcpListener m_listener;
@@ -80,7 +80,6 @@ private:
 	sf::Packet m_packet;
 	sf::Clock m_send_time;
 	sf::Int32 m_send_rate = 4;
-	std::vector<Client> m_client_vector;
 
 	sf::Socket::Status acceptConnection();
 	sf::Socket::Status receiveClientData();

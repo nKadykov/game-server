@@ -40,45 +40,49 @@ sf::Socket::Status NetworkServer::acceptConnection() {
 
 sf::Socket::Status NetworkServer::receiveClientData() {
 	if (m_registration_step != 1) {
-		sf::Socket::Status::NotReady;
+		return sf::Socket::Status::Error;
 	}
 	if (m_registration_socket.isBlocking()) {
 		m_registration_socket.setBlocking(false);
 	}
+
 	if (m_registration_socket.receive(m_packet) != sf::Socket::Status::Done) {
 		return sf::Socket::Status::NotReady;
 	}
-	if (m_packet.getDataSize() == 0) {
-		std::cout << "receiveClientData(): Error, received packet is empty\n";
+	if (m_packet.getDataSize() < 1) {
+		std::cout << "(!)receiveClientRegData(): Error, received packet is empty\n";
 		return sf::Socket::Status::Error;
 	}
 	std::string name;
-	if (!(m_packet >> name)) {
+	if (m_packet >> name) {
+		Client newClient;
+		m_client_vector.push_back(newClient);
+		m_client_vector.back().name = name;
+		m_client_vector.back().ip = m_registration_socket.getRemoteAddress();
+		m_client_vector.back().p_data_socket = new sf::UdpSocket;
+		if (m_client_vector.back().p_data_socket->bind(sf::Socket::AnyPort) != sf::Socket::Status::Done)
+			std::cout << "receiveClientData(): Failed to bind port to the new client-dedicated data port\n";
+	}
+	else {
 		std::cout << "receiveClientData(): Failed to read client name from received packet\n";
 		return sf::Socket::Status::Error;
 	}
-	Client new_client;
-	m_client_vector.push_back(new_client);
-	m_client_vector.back().name = name;
-	m_client_vector.back().ip = m_registration_socket.getRemoteAddress();
-	m_client_vector.back().p_data_socket = new sf::UdpSocket;
-	if (m_client_vector.back().p_data_socket->bind(sf::Socket::AnyPort) != sf::Socket::Status::Done) {
-		std::cout << "receiveClientData(): Failed to bind port to the new client-dedicated data port\n";
-	}
 	sf::Uint16 port;
-	if (!(m_packet >> port)) {
-		std::cout << "receiveClientData(): Failed to read client data socket port from received m_packet\n";
+	if (m_packet >> port) {
+		m_client_vector.back().port = static_cast<unsigned short>(port);
+	}
+	else {
+		std::cout << "receiveClientData(): Failed to read client data socket port from received packet\n";
 		return sf::Socket::Status::Error;
 	}
-	m_client_vector.back().port = static_cast<unsigned short>(port);
+
 	if (!m_packet.endOfPacket()) {
 		std::cout << "receiveClientData(): Client registration data received, but something left, data probably corrupted\n";
 	}
-	std::cout << "receiveClientRegData(): Client registration data received. New client: " << m_client_vector.back().name << std::endl;
+	std::cout << "receiveClientData(): Client registration data received. New client: " << m_client_vector.back().name << std::endl;
 	m_registration_step = 2;
-	for (int i = 0; i < m_client_vector.size() - 1; i++) {
+	for (int i = 0; i < m_client_vector.size() - 1; i++)
 		m_client_vector[i].done = false;
-	}
 	m_packet.clear();
 	return sf::Socket::Status::Done;
 }

@@ -15,9 +15,9 @@ int main()
 
 	sf::Packet packet;
 	packet << "DATA";
-	for (int i = 0; i < server.getClientVector().size(); i++)
+	for (int i = 0; i < server.m_client_vector.size(); i++)
 	{
-		packet << server.getClientVector()[i].name << server.getClientVector()[i].position.x << server.getClientVector()[i].position.y;
+		packet << server.m_client_vector[i].name << server.m_client_vector[i].position.x << server.m_client_vector[i].position.y;
 	}
 
 	while (true)
@@ -29,9 +29,9 @@ int main()
 		{
 			packet.clear();
 			packet << "DATA";
-			for (int i = 0; i < server.getClientVector().size(); i++)
+			for (int i = 0; i < server.m_client_vector.size(); i++)
 			{
-				packet << server.getClientVector()[i].name << server.getClientVector()[i].position.x << server.getClientVector()[i].position.y;
+				packet << server.m_client_vector[i].name << server.m_client_vector[i].position.x << server.m_client_vector[i].position.y;
 			}
 		}
 
@@ -39,23 +39,23 @@ int main()
 		unsigned int client_index;
 		if (server.receiveData(client_index) == sf::Socket::Status::Done)
 		{
-			if (server.getClientVector()[client_index].registration_packet.getDataSize() > 0)
+			if (server.m_client_vector[client_index].registration_packet.getDataSize() > 0)
 			{
 				std::string s;
-				if (server.getClientVector()[client_index].registration_packet >> s)
+				if (server.m_client_vector[client_index].registration_packet >> s)
 				{
 					if (s == "DATA")
 					{
 						float x, y;
-						if (server.getClientVector()[client_index].registration_packet >> x)
+						if (server.m_client_vector[client_index].registration_packet >> x)
 						{
-							server.getClientVector()[client_index].position.x = x;
+							server.m_client_vector[client_index].position.x = x;
 						}
-						if (server.getClientVector()[client_index].registration_packet >> y)
+						if (server.m_client_vector[client_index].registration_packet >> y)
 						{
-							server.getClientVector()[client_index].position.y = y;
+							server.m_client_vector[client_index].position.y = y;
 						}
-						server.getClientVector()[client_index].registration_packet.clear();
+						server.m_client_vector[client_index].registration_packet.clear();
 					}
 				}
 			}
