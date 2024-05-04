@@ -5,14 +5,10 @@
 
 #include "network_server.h"
 
-NetworkServer server;
-
-
 int main()
 {
+	NetworkServer server;
 	server.init();
-
-
 	sf::Packet packet;
 	packet << "DATA";
 	for (int i = 0; i < server.m_client_vector.size(); i++)
@@ -34,35 +30,31 @@ int main()
 				packet << server.m_client_vector[i].name << server.m_client_vector[i].position.x << server.m_client_vector[i].position.y;
 			}
 		}
-
-
 		unsigned int client_index;
-		if (server.receiveData(client_index) == sf::Socket::Status::Done)
+		if (server.receiveData(client_index) != sf::Socket::Status::Done) {
+			continue;
+		}
+		if (server.m_client_vector[client_index].registration_packet.getDataSize() < 1) {
+			continue;
+		}
+		std::string s;
+		if (server.m_client_vector[client_index].registration_packet >> s)
 		{
-			if (server.m_client_vector[client_index].registration_packet.getDataSize() > 0)
+			if (s == "DATA")
 			{
-				std::string s;
-				if (server.m_client_vector[client_index].registration_packet >> s)
+				float x, y;
+				if (server.m_client_vector[client_index].registration_packet >> x)
 				{
-					if (s == "DATA")
-					{
-						float x, y;
-						if (server.m_client_vector[client_index].registration_packet >> x)
-						{
-							server.m_client_vector[client_index].position.x = x;
-						}
-						if (server.m_client_vector[client_index].registration_packet >> y)
-						{
-							server.m_client_vector[client_index].position.y = y;
-						}
-						server.m_client_vector[client_index].registration_packet.clear();
-					}
+					server.m_client_vector[client_index].position.x = x;
 				}
+				if (server.m_client_vector[client_index].registration_packet >> y)
+				{
+					server.m_client_vector[client_index].position.y = y;
+				}
+				server.m_client_vector[client_index].registration_packet.clear();
 			}
 		}
 	}
-
-
 	getchar();
 	return 0;
 }
