@@ -64,19 +64,6 @@ struct Client
 
 class NetworkServer
 {
-	short m_registration_step = 0;
-	sf::TcpListener m_listener;
-	sf::TcpSocket m_registration_socket;
-	sf::Packet m_packet;
-	sf::Clock m_send_time;
-	sf::Int32 m_send_rate = 4;
-
-	std::vector<Client> m_client_vector;
-
-	sf::Socket::Status acceptConnection();
-	sf::Socket::Status receiveClientData();
-	sf::Socket::Status sendClientData();
-	sf::Socket::Status sendDataPort();
 public:
 	NetworkServer();
 	sf::Socket::Status init();
@@ -86,4 +73,17 @@ public:
 	sf::Socket::Status sendData(sf::Packet);
 
 	std::vector<Client> getClientVector() const;
+private:
+	short m_registration_step = 0;
+	sf::TcpListener m_listener;
+	sf::TcpSocket m_registration_socket;
+	sf::Packet m_packet;
+	sf::Clock m_send_time;
+	sf::Int32 m_send_rate = 4;
+	std::vector<Client> m_client_vector;
+
+	sf::Socket::Status acceptConnection();
+	sf::Socket::Status receiveClientData();
+	sf::Socket::Status sendClientData();
+	sf::Socket::Status sendDataPort();
 };
